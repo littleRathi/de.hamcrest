@@ -4,16 +4,22 @@ import static de.bs.hamcrest.ClassMatchers.equalToType;
 import static de.bs.hamcrest.ClassMatchers.extendsType;
 import static de.bs.hamcrest.ClassMatchers.fullQualifiedName;
 import static de.bs.hamcrest.ClassMatchers.simpleClassName;
+import static de.bs.hamcrest.ClassMatchers.collectionWithGenericType;
+import static de.bs.hamcrest.ClassMatchers.collection;
+import static de.bs.hamcrest.ClassMatchers.ofType;
 
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItems;
 
 import static org.junit.Assert.assertThat;
 
 import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.junit.Test;
@@ -188,5 +194,86 @@ public class ClassMatchersTest {
 		String name = "abcdefghijklmnopqrstuvwxyz";
 		
 		assertThat(testee, not(simpleClassName(containsString(name))));
+	}
+	
+	// collectionWithGenericType
+	@Test()
+	public void testIsCollectionWithGenericType() {
+		List<String> testee = new ArrayList<String>();
+		testee.add("abc");
+		testee.add("def");
+		
+		assertThat(testee, collectionWithGenericType(List.class, String.class));
+	}
+	
+	@Test
+	public void testIsCollectionWithGenericTypeAndWrongGenericType() {
+		List<Object> testee = new ArrayList<Object>();
+		testee.add("abc");
+		testee.add(2);
+		
+		assertThat(testee, not(collectionWithGenericType(List.class, String.class)));
+	}
+	
+	// collection
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testCollection() {
+		List<String> testee = new ArrayList<String>();
+		testee.add("abc");
+		testee.add("def");
+		
+		assertThat(testee, collection(List.class, String.class).and(hasItems("abc")));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test(expected=AssertionError.class)
+	public void testCollectionWrongItem() {
+		List<String> testee = new ArrayList<String>();
+		testee.add("abc");
+		testee.add("def");
+		
+		assertThat(testee, collection(List.class, String.class).and(hasItems("abcdef")));
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Test(expected=AssertionError.class)
+	public void testCollectionWrongGenericType() {
+		List<Object> testee = new ArrayList<Object>();
+		testee.add("abc");
+		testee.add(5);
+		
+		assertThat(testee, collection(List.class, String.class).and(hasItems("abc")));
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Test(expected=AssertionError.class)
+	public void testCollectionWrongCollection() {
+		List<String> testee = new ArrayList<String>();
+		testee.add("abc");
+		
+		assertThat(testee, collection(Set.class, String.class).and(hasItems("abc")));
+	}
+	
+	// ofType
+	@Test
+	public void testOfTypeString() {
+		Object testee = "String";
+		
+		assertThat(testee, ofType(equalTo(String.class)).and(equalTo("String")));
+	}
+	
+	@Test(expected=AssertionError.class)
+	public void testOfTypeStringButExpectInteger() {
+		Object testee = "should be Integer";
+		
+		assertThat(testee, ofType(equalTo(Integer.class)).and(equalTo(4)));
+	}
+	
+	@Test(expected=AssertionError.class)
+	public void testOfTypeStringWrongStartWith() {
+		String testee = "ending instead of starting";
+		
+		assertThat(testee, ofType(equalTo(String.class)).and(startsWith("start")));
 	}
 }

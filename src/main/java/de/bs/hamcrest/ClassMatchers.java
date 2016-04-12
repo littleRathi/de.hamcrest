@@ -1,8 +1,15 @@
 package de.bs.hamcrest;
 
+import java.util.Collection;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+
+import de.bs.hamcrest.internal.CollectionWithGenericTypeMatcher;
+import de.bs.hamcrest.internal.CollectionWithGenericTypeMatcher.CollectionWithGenericTypeMatcherAnd;
+import de.bs.hamcrest.internal.OfType;
+import de.bs.hamcrest.internal.OfType.OfTypeAnd;
 
 public class ClassMatchers {
 	/**
@@ -93,6 +100,8 @@ public class ClassMatchers {
 	 * <p>
 	 * For examples:
 	 * <pre>
+	 * 	assertThat(String.class, simpleClassName(startsWith("Str")));
+	 * 	assertThat(Integer.class, simpleClassName(equalTo("Integer")));
 	 * </pre>
 	 * @param matcher
 	 * @return
@@ -110,5 +119,81 @@ public class ClassMatchers {
 				return matcher.matches(simpleName);
 			}
 		};
+	}
+	
+	/**
+	 * Creates a matcher that check if the item is from a given class (first parameter), whereas it must 
+	 * heritage must be from Collection<?> interface. The second parameter is the expected generic type 
+	 * from the collection.
+	 * <p>
+	 * For examples:
+	 * <pre>
+	 * 	assertThat(Arrays.asList("a", "b"), collectionWithGenericType(List.class, String.class));
+	 * </pre>
+	 * @param collectionType
+	 * @param genericType
+	 * @return
+	 */
+	public static <T extends Collection<?>, S> Matcher<Object> collectionWithGenericType(final Class<T> collectionType, final Class<S> genericType) {
+		return new TypeSafeDiagnosingMatcher<Object>() {
+			public void describeTo(Description description) {
+				description.appendText("should be a collection from type ").appendValue(collectionType).appendText(" and generic type ")
+					.appendValue(genericType);
+			}
+			@Override
+			protected boolean matchesSafely(Object item, Description mismatchDescription) {
+				if (collectionType.isAssignableFrom(item.getClass())) {
+					Collection<?> collection = (Collection<?>)item;
+					for (Object object: collection) {
+						if (!genericType.isAssignableFrom(object.getClass())) {
+							mismatchDescription.appendText("found a element in the collection that not match the generic type, with type ").appendValue(object.getClass());
+							return false;
+						}
+					}
+				} else {
+					mismatchDescription.appendText("given object is not a collection for the given type: ").appendValue(collectionType);
+					return false;
+				}
+				return true;
+			}
+		};
+	}
+
+	/**
+	 * Creates a object that check if the given item extends from a given Collection class, first 
+	 * parameter. Then checks the elements of the collection against the second parameter, that
+	 * is the expected generic type of the collection. The returned object, provides a method to
+	 * push the item object to a another matcher (method and(Matcher<C extends Collection<T>>)). But only if item is from the right collection
+	 * and all elements in the collection match against the the generic type, also.
+	 * <p>
+	 * Warning: When using this matcher, it will lead to a warning. Ignore it or use @SuppressWarnings("unchecked"). 
+	 * This is due the handling of generic by this matcher. Please also note, do not use not(...), like 
+	 * not(collection(...).and(...)).
+	 * <p>
+	 * For examples:
+	 * <pre>
+	 * 	@SuppressWarnings("unchecked")
+	 * 	assertThat(Arrays.asList("a", "b"), collection(List.class, String.class).and(hasItems("a", "b")));
+	 * </pre>
+	 * @param collectionType
+	 * @param genericType
+	 * @return
+	 */
+	public static <C extends Collection<T>, T> CollectionWithGenericTypeMatcherAnd<C, T> collection(final Class<C> collectionType, final Class<T> genericType) {
+		return CollectionWithGenericTypeMatcher.collectionWithGenericType(collectionType, genericType);
+	}
+	
+	/**
+	 * Create a matcher, if the given object matches the ´type´ matcher, if it matches, than the object is
+	 * passed to the next matcher.
+	 * <p>
+	 * For examples:
+	 * <pre>
+	 * 	assertThat("abc", ofType(equalTo(String.class)).and(equalTo("abc")));
+	 * 	assertThat("test text and some more", ofType(equalTo(String.class)).and(startsWith("test")));
+	 * </pre> 
+	 */
+	public static <T> OfTypeAnd<T> ofType(final Matcher<Class<T>> typeMatcher) {
+		return OfType.ofType(typeMatcher);
 	}
 }

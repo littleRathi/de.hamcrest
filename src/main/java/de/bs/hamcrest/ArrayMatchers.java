@@ -36,7 +36,7 @@ public class ArrayMatchers {
 	
 	/**
 	 * Create a matcher that take the size of the examined array and matches it 
-	 * against the Matcher for intger. Useful when only soft condition are give, 
+	 * against the Matcher for integer. Useful when only soft condition are give, 
 	 * like the array size must be greater than 0.
 	 * <p>
 	 * For examples:
