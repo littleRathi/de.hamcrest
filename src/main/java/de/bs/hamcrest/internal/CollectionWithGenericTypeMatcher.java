@@ -24,7 +24,6 @@ public class CollectionWithGenericTypeMatcher<C extends Collection<T>, T> extend
 			this.collectionType = collectionType;
 			this.genericType = genericType;
 		}
-		// TODO should return Matcher<C> instead of Matcher<Object>
 		public Matcher<Object> and(final Matcher<C> matcher) {
 			return new CollectionWithGenericTypeMatcher<C, T>(collectionType, genericType, matcher);
 		}
@@ -59,5 +58,4 @@ public class CollectionWithGenericTypeMatcher<C extends Collection<T>, T> extend
 		matcher.describeMismatch(item, mismatchDescription);
 		return matcher.matches(item);
 	}
-
 }
